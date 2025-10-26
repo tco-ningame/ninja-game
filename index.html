@@ -165,9 +165,13 @@
       box-shadow: 0 5px 20px rgba(255, 107, 107, 0.3);
     }
     .exercise-card.completed {
-      border-color: #2ecc71;
-      background: rgba(46, 204, 113, 0.1);
-      animation: completeGlow 0.6s ease;
+  border-color: #2ecc71;
+  background: rgba(46, 204, 113, 0.1);
+  animation: completeGlow 0.6s ease;
+  /* Ensure layout remains intact */
+  position: static; /* Prevents the card from shifting */
+  box-shadow: none; /* Remove box-shadow if needed */
+}
     }
     @keyframes completeGlow {
       0% { box-shadow: 0 0 0 rgba(46, 204, 113, 0); }

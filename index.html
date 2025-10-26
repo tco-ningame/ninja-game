@@ -154,11 +154,12 @@
       border: 2px solid rgba(255, 107, 107, 0.3);
       border-radius: 8px;
       padding: 20px;
-      transition: all 0.3s ease;
+      transition: border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
       position: relative;
       display: flex;
       flex-direction: column;
       min-height: 200px;
+      will-change: border-color, background, box-shadow;
     }
     .exercise-card:hover:not(.completed) {
       border-color: #ff6b6b;
@@ -170,9 +171,8 @@
       animation: completeGlow 0.6s ease;
     }
     @keyframes completeGlow {
-      0% { box-shadow: 0 0 0 rgba(46, 204, 113, 0); }
+      0%, 100% { box-shadow: 0 0 10px rgba(46, 204, 113, 0.2); }
       50% { box-shadow: 0 0 30px rgba(46, 204, 113, 0.6); }
-      100% { box-shadow: 0 0 10px rgba(46, 204, 113, 0.2); }
     }
     .exercise-title {
       font-weight: 600;

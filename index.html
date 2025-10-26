@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shadowborn - Ninja Academy</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1000px; margin: 0 auto; }
+    
+    /* Login Screen */
+    .login-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      text-align: center;
+    }
+    .logo {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+    h1 {
+      font-size: 3rem;
+      color: #ff6b6b;
+      text-shadow: 0 0 30px rgba(255, 107, 107, 0.6);
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #a0a0a0;
+      font-size: 1.2rem;
+      margin-bottom: 50px;
+    }
+    .google-btn {
+      background: #fff;
+      color: #333;
+      padding: 15px 40px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    .google-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+    .google-icon {
+      width: 24px;
+      height: 24px;
+    }
+    
+    /* Game Screen */
+    .game-screen { display: none; }
+    .game-screen.active { display: block; }
+    
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .player-info h2 {
+      color: #ff6b6b;
+      font-size: 1.8rem;
+      margin-bottom: 5px;
+    }
+    .rank-badge {
+      display: inline-block;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .stats {
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #ff6b6b;
+    }
+    .logout-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 25px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    h3 {
+      color: #ff6b6b;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    /* Academy Exercises */
+    .exercises-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .exercise-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 2px solid rgba(255, 107, 107, 0.3);
+      border-radius: 8px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 200px;
+    }
+    .exercise-card:hover:not(.completed) {
+      border-color: #ff6b6b;
+      box-shadow: 0 5px 20px rgba(255, 107, 107, 0.3);
+    }
+    .exercise-card.completed {
+      border-color: #2ecc71;
+      background: rgba(46, 204, 113, 0.1);
+      animation: completeGlow 0.6s ease;
+    }
+    @keyframes completeGlow {
+      0% { box-shadow: 0 0 0 rgba(46, 204, 113, 0); }
+      50% { box-shadow: 0 0 30px rgba(46, 204, 113, 0.6); }
+      100% { box-shadow: 0 0 10px rgba(46, 204, 113, 0.2); }
+    }
+    .exercise-title {
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #ff6b6b;
+      line-height: 1.3;
+    }
+    .exercise-desc {
+      font-size: 13px;
+      color: #aaa;
+      margin-bottom: 15px;
+      flex-grow: 1;
+      line-height: 1.5;
+    }
+    .complete-btn {
+      width: 100%;
+      padding: 10px;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: auto;
+    }
+    .complete-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+    }
+    .complete-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .approve-btn {
+      background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    }
+    .approve-btn:hover:not(:disabled) {
+      box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+    }
+    .waiting-btn {
+      background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    }
+    .player-tag {
+      display: inline-block;
+      background: rgba(102, 126, 234, 0.3);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #667eea;
+      margin-bottom: 8px;
+    }
+    .check-icon {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      color: #2ecc71;
+      font-size: 24px;
+    }
+    
+    /* Progress Bar */
+    .progress-container {
+      margin: 20px 0;
+    }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 25px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff6b6b 0%, #feca57 100%);
+      transition: width 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    
+    /* Exam Eligibility */
+    .exam-notice {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      margin: 20px 0;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+    
+    .info-box {
+      background: rgba(102, 126, 234, 0.2);
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+      font-size: 14px;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-style: italic;
+    }
+    
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid #ff6b6b;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 40px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="container">
+    
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+      <div class="logo">🥷</div>
+      <h1>SHADOWBORN</h1>
+      <p class="subtitle">Begin Your Journey to Become a Legendary Ninja</p>
+      <button class="google-btn" id="googleLoginBtn">
+        <svg class="google-icon" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Sign in with Google
+      </button>
+    </div>
+
+    <!-- Game Screen -->
+    <div class="game-screen" id="gameScreen">
+      
+      <!-- Header -->
+      <header>
+        <div class="player-info">
+          <h2 id="playerName">Loading...</h2>
+          <span class="rank-badge" id="rankBadge">Academy Student</span>
+          <div class="stats">
+            <div class="stat-item">
+              <span class="stat-value" id="levelValue">0</span>
+              <span>Level</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="xpValue">0</span>
+              <span>XP</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="exercisesCompleted">0/5</span>
+              <span>Exercises</span>
+            </div>
+          </div>
+        </div>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+      </header>
+
+      <!-- Academy Student Section -->
+      <div id="academySection">
+        <div class="card">
+          <h3>🎓 Academy Training</h3>
+          <div class="info-box">
+            Complete all 5 basic exercises to graduate from the Academy and become a <strong>Genin</strong>!
+          </div>
+          
+          <div class="progress-container">
+            <div class="progress-label">
+              <span>Progress to Genin</span>
+              <span id="progressText">0/5</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+          </div>
+
+          <div class="exercises-grid" id="exercisesGrid">
+            <!-- Exercises will be loaded here -->
+          </div>
+        </div>
+
+      <!-- Approval Section -->
+      <div class="card">
+        <h3>👥 Approve Others' Exercises</h3>
+        <div class="info-box">
+          <strong>Help your fellow students graduate!</strong><br>
+          When you approve someone's exercise, they get 10 XP and progress toward becoming a Genin.
+        </div>
+        <div id="approvalsGrid" class="exercises-grid">
+          <!-- Pending approvals will be loaded here -->
+        </div>
+      </div>
+      </div>
+
+      <!-- Genin+ Section -->
+      <div id="geninSection" style="display: none;">
+        <div class="card">
+          <h3>⚔️ Ninja Dashboard</h3>
+          <div class="info-box">
+            Welcome, Genin! Your journey to becoming a legendary ninja begins here. Missions coming soon!
+          </div>
+          
+          <div id="examEligibilityNotice"></div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // Supabase Configuration
+    const SUPABASE_URL = "https://suomtvpllfwgccejakhd.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1b210dnBsbGZ3Z2NjZWpha2hkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExMzU0MTUsImV4cCI6MjA3NjcxMTQxNX0.8mjsiXYqI1yKR63qEN3vhxK8af6dzoxRYxXORyv4RC0";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Global state
+    let currentUser = null;
+    let currentPlayer = null;
+
+    // Academy Exercises
+    const ACADEMY_EXERCISES = [
+      {
+        name: "Push-ups",
+        description: "Complete 20 push-ups to build upper body strength",
+        xp: 10
+      },
+      {
+        name: "Running",
+        description: "Run 1 kilometer without stopping",
+        xp: 10
+      },
+      {
+        name: "Shuriken Practice",
+        description: "Hit the target 10 times with practice shurikens",
+        xp: 10
+      },
+      {
+        name: "Chakra Control",
+        description: "Balance on one foot for 2 minutes",
+        xp: 10
+      },
+      {
+        name: "Stealth Training",
+        description: "Move silently for 5 minutes without being detected",
+        xp: 10
+      }
+    ];
+
+    // DOM Elements
+    const loginScreen = document.getElementById('loginScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const playerName = document.getElementById('playerName');
+    const rankBadge = document.getElementById('rankBadge');
+    const levelValue = document.getElementById('levelValue');
+    const xpValue = document.getElementById('xpValue');
+    const exercisesCompleted = document.getElementById('exercisesCompleted');
+    const progressText = document.getElementById('progressText');
+    const progressFill = document.getElementById('progressFill');
+    const exercisesGrid = document.getElementById('exercisesGrid');
+    const approvalsGrid = document.getElementById('approvalsGrid');
+    const academySection = document.getElementById('academySection');
+    const geninSection = document.getElementById('geninSection');
+
+    // Initialize
+    async function init() {
+      // Check if user is already logged in
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        currentUser = session.user;
+        await loadPlayerData();
+        showGameScreen();
+      } else {
+        showLoginScreen();
+      }
+    }
+
+    // Show/Hide Screens
+    function showLoginScreen() {
+      loginScreen.style.display = 'flex';
+      gameScreen.classList.remove('active');
+    }
+
+    function showGameScreen() {
+      loginScreen.style.display = 'none';
+      gameScreen.classList.add('active');
+    }
+
+    // Google Login
+    googleLoginBtn.addEventListener('click', async () => {
+      try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: 'https://tco-ningame.netlify.app/'
+          }
+        });
+        if (error) throw error;
+      } catch (error) {
+        console.error('Login error:', error);
+        alert('Login failed: ' + error.message);
+      }
+    });
+
+    // Logout
+    logoutBtn.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      currentUser = null;
+      currentPlayer = null;
+      showLoginScreen();
+    });
+
+    // Load Player Data
+    async function loadPlayerData() {
+      try {
+        // Check if player exists
+        const { data: existingPlayer, error: fetchError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .single();
+
+        if (existingPlayer) {
+          currentPlayer = existingPlayer;
+          console.log('Loaded existing player:', currentPlayer);
+        } else {
+          // Create new player
+          const { data: newPlayer, error: createError } = await supabase
+            .from('players')
+            .insert([{
+              user_id: currentUser.id,
+              name: currentUser.user_metadata.full_name || currentUser.email.split('@')[0],
+              rank: 'Academy Student',
+              level: 0,
+              xp: 0,
+              exam_eligible: false,
+              exercises_completed: 0
+            }])
+            .select()
+            .single();
+
+          if (createError) throw createError;
+          currentPlayer = newPlayer;
+          console.log('Created new player:', currentPlayer);
+
+          // Create exercises for new player
+          await createExercises();
+        }
+
+        updateUI();
+        await loadExercises();
+        await loadPendingApprovals();
+
+      } catch (error) {
+        console.error('Error loading player:', error);
+        alert('Error loading player data: ' + error.message);
+      }
+    }
+
+    // Create Exercises
+    async function createExercises() {
+      try {
+        console.log('Creating exercises for player:', currentPlayer.id);
+        const exercises = ACADEMY_EXERCISES.map(ex => ({
+          player_id: currentPlayer.id,
+          exercise_name: ex.name,
+          completed: false,
+          approved: false,
+          approved_by: null
+        }));
+
+        console.log('Inserting exercises:', exercises);
+        
+        const { data, error } = await supabase
+          .from('exercises')
+          .insert(exercises)
+          .select();
+
+        if (error) {
+          console.error('Error creating exercises:', error);
+          throw error;
+        }
+        
+        console.log('Exercises created successfully:', data);
+        return data;
+      } catch (error) {
+        console.error('Error in createExercises:', error);
+        throw error;
+      }
+    }
+
+    // Load Exercises
+    async function loadExercises() {
+      try {
+        const { data: exercises, error } = await supabase
+          .from('exercises')
+          .select('*')
+          .eq('player_id', currentPlayer.id)
+          .order('created_at', { ascending: true }); // Keep original order
+
+        if (error) throw error;
+
+        console.log('Loaded exercises:', exercises);
+        
+        // If no exercises exist and player is Academy Student, create them automatically
+        if ((!exercises || exercises.length === 0) && currentPlayer.rank === 'Academy Student') {
+          console.log('No exercises found, creating them automatically...');
+          await createExercises();
+          // Reload after creating
+          const { data: newExercises } = await supabase
+            .from('exercises')
+            .select('*')
+            .eq('player_id', currentPlayer.id)
+            .order('created_at', { ascending: true });
+          renderExercises(newExercises || []);
+        } else {
+          renderExercises(exercises || []);
+        }
+      } catch (error) {
+        console.error('Error loading exercises:', error);
+        exercisesGrid.innerHTML = '<div class="empty-state">Error loading exercises. Check console.</div>';
+      }
+    }
+
+    // Render Exercises
+    function renderExercises(exercises) {
+      exercisesGrid.innerHTML = '';
+
+      exercises.forEach((exercise, index) => {
+        const exerciseData = ACADEMY_EXERCISES[index];
+        const card = document.createElement('div');
+        card.className = `exercise-card ${exercise.completed ? 'completed' : ''}`;
+        
+        let buttonHtml = '';
+        if (exercise.completed && !exercise.approved) {
+          buttonHtml = `
+            <button class="complete-btn" disabled style="background: #f39c12;">
+              ⏳ Awaiting Approval
+            </button>
+          `;
+        } else if (exercise.completed && exercise.approved) {
+          buttonHtml = `
+            <button class="complete-btn" disabled>
+              ✅ Approved
+            </button>
+          `;
+        } else {
+          buttonHtml = `
+            <button class="complete-btn" onclick="completeExercise('${exercise.id}')">
+              Complete
+            </button>
+          `;
+        }
+        
+        card.innerHTML = `
+          ${exercise.completed && exercise.approved ? '<div class="check-icon">✓</div>' : ''}
+          <div class="exercise-title">${exercise.exercise_name}</div>
+          <div class="exercise-desc">${exerciseData.description}</div>
+          ${buttonHtml}
+        `;
+        
+        exercisesGrid.appendChild(card);
+      });
+    }
+
+    // Complete Exercise
+    async function completeExercise(exerciseId) {
+      try {
+        // Mark exercise as completed
+        const { error: updateError } = await supabase
+          .from('exercises')
+          .update({ 
+            completed: true, 
+            completed_at: new Date().toISOString() 
+          })
+          .eq('id', exerciseId);
+
+        if (updateError) throw updateError;
+
+        // Update player stats
+        const newExercisesCompleted = currentPlayer.exercises_completed + 1;
+        const newXP = currentPlayer.xp + 10;
+
+        const { error: playerError } = await supabase
+          .from('players')
+          .update({ 
+            exercises_completed: newExercisesCompleted,
+            xp: newXP,
+            last_updated: new Date().toISOString()
+          })
+          .eq('id', currentPlayer.id);
+
+        if (playerError) throw playerError;
+
+        currentPlayer.exercises_completed = newExercisesCompleted;
+        currentPlayer.xp = newXP;
+
+        // Check if graduated to Genin
+        if (newExercisesCompleted >= 5 && currentPlayer.rank === 'Academy Student') {
+          await graduateToGenin();
+        } else {
+          updateUI();
+          await loadExercises();
+          await loadPendingApprovals();
+        }
+
+      } catch (error) {
+        console.error('Error completing exercise:', error);
+        alert('Error completing exercise: ' + error.message);
+      }
+    }
+
+    // Load Pending Approvals (Circular System)
+    async function loadPendingApprovals() {
+      try {
+        // Get all players ordered by creation time
+        const { data: allPlayers, error: playersError } = await supabase
+          .from('players')
+          .select('id, name, created_at')
+          .order('created_at', { ascending: true });
+
+        if (playersError) throw playersError;
+
+        // Find my position in the circle
+        const myIndex = allPlayers.findIndex(p => p.id === currentPlayer.id);
+        
+        if (myIndex === -1 || allPlayers.length < 2) {
+          renderPendingApprovals([]);
+          return;
+        }
+
+        // Determine who I should approve (next person in circle)
+        let personToApprove;
+        if (allPlayers.length === 2) {
+          // With 2 people: A approves B, B approves A
+          personToApprove = allPlayers[myIndex === 0 ? 1 : 0];
+        } else {
+          // With 3+ people: circular chain
+          personToApprove = allPlayers[(myIndex + 1) % allPlayers.length];
+        }
+
+        // Get exercises from the person I should approve
+        const { data: pendingExercises, error } = await supabase
+          .from('exercises')
+          .select(`
+            *,
+            player:players!exercises_player_id_fkey(name)
+          `)
+          .eq('player_id', personToApprove.id)
+          .eq('completed', true)
+          .eq('approved', false);
+
+        if (error) throw error;
+
+        renderPendingApprovals(pendingExercises || [], personToApprove.name);
+      } catch (error) {
+        console.error('Error loading approvals:', error);
+      }
+    }
+
+    // Render Pending Approvals
+    function renderPendingApprovals(exercises, playerName) {
+      approvalsGrid.innerHTML = '';
+      
+      if (exercises.length === 0) {
+        approvalsGrid.innerHTML = playerName 
+          ? `<div class="empty-state">Waiting for <strong>${playerName}</strong> to complete exercises...</div>`
+          : '<div class="empty-state">✅ No exercises pending approval right now</div>';
+        return;
+      }
+
+      const infoBox = document.createElement('div');
+      infoBox.className = 'info-box';
+      infoBox.style.marginBottom = '15px';
+      infoBox.innerHTML = `You are assigned to approve <strong>${playerName}'s</strong> exercises`;
+      approvalsGrid.appendChild(infoBox);
+
+      exercises.forEach((exercise) => {
+        const exerciseData = ACADEMY_EXERCISES.find(ex => ex.name === exercise.exercise_name);
+        const card = document.createElement('div');
+        card.className = 'exercise-card';
+        
+        card.innerHTML = `
+          <div class="player-tag">👤 ${exercise.player.name}</div>
+          <div class="exercise-title">${exercise.exercise_name}</div>
+          <div class="exercise-desc">${exerciseData?.description || exercise.exercise_name}</div>
+          <div style="font-size: 12px; color: #888; margin-bottom: 10px;">
+            Completed: ${new Date(exercise.completed_at).toLocaleString()}
+          </div>
+          <button class="complete-btn approve-btn" onclick="approveExercise('${exercise.id}', '${exercise.player_id}')">
+            ✓ Approve & Give 10 XP
+          </button>
+        `;
+        
+        approvalsGrid.appendChild(card);
+      });
+    }
+
+    // Approve Exercise
+    async function approveExercise(exerciseId, playerId) {
+      if (!confirm('Approve this exercise? This will give the player 10 XP.')) return;
+
+      try {
+        // Mark exercise as approved
+        const { error: approveError } = await supabase
+          .from('exercises')
+          .update({ 
+            approved: true,
+            approved_by: currentPlayer.id,
+            approved_at: new Date().toISOString()
+          })
+          .eq('id', exerciseId);
+
+        if (approveError) throw approveError;
+
+        // Get current player data
+        const { data: player, error: playerError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('id', playerId)
+          .single();
+
+        if (playerError) throw playerError;
+
+        // Count total approved exercises for that player
+        const { data: approvedExercises, error: countError } = await supabase
+          .from('exercises')
+          .select('id')
+          .eq('player_id', playerId)
+          .eq('approved', true);
+
+        if (countError) throw countError;
+
+        const approvedCount = approvedExercises.length;
+        const newXP = player.xp + 10;
+
+        // Update player stats
+        const updateData = {
+          exercises_completed: approvedCount,
+          xp: newXP,
+          last_updated: new Date().toISOString()
+        };
+
+        // Check if they should graduate to Genin
+        if (approvedCount >= 5 && player.rank === 'Academy Student') {
+          updateData.rank = 'Genin';
+          updateData.level = 1;
+        }
+
+        const { error: updateError } = await supabase
+          .from('players')
+          .update(updateData)
+          .eq('id', playerId);
+
+        if (updateError) throw updateError;
+
+        // Show success message
+        if (approvedCount >= 5 && player.rank === 'Academy Student') {
+          alert(`🎉 ${player.name} has graduated to GENIN! Exercise approved and 10 XP awarded!`);
+        } else {
+          alert(`✅ Exercise approved! ${player.name} received 10 XP (${approvedCount}/5 exercises complete)`);
+        }
+
+        await loadPendingApprovals();
+
+      } catch (error) {
+        console.error('Error approving exercise:', error);
+        alert('Error approving exercise: ' + error.message);
+      }
+    }
+
+    // Graduate to Genin
+    async function graduateToGenin() {
+      try {
+        const { error } = await supabase
+          .from('players')
+          .update({ 
+            rank: 'Genin',
+            level: 1,
+            last_updated: new Date().toISOString()
+          })
+          .eq('id', currentPlayer.id);
+
+        if (error) throw error;
+
+        currentPlayer.rank = 'Genin';
+        currentPlayer.level = 1;
+
+        alert('🎉 Congratulations! You graduated from the Academy and are now a GENIN!');
+        
+        updateUI();
+        academySection.style.display = 'none';
+        geninSection.style.display = 'block';
+
+      } catch (error) {
+        console.error('Error graduating:', error);
+        alert('Error graduating: ' + error.message);
+      }
+    }
+
+    // Update UI
+    function updateUI() {
+      playerName.textContent = currentPlayer.name;
+      rankBadge.textContent = currentPlayer.rank;
+      levelValue.textContent = currentPlayer.level;
+      xpValue.textContent = currentPlayer.xp;
+      exercisesCompleted.textContent = `${currentPlayer.exercises_completed}/5`;
+
+      // Update progress bar
+      const progress = (currentPlayer.exercises_completed / 5) * 100;
+      progressText.textContent = `${currentPlayer.exercises_completed}/5`;
+      progressFill.style.width = `${progress}%`;
+      progressFill.textContent = `${Math.round(progress)}%`;
+
+      console.log('Current rank:', currentPlayer.rank);
+      console.log('Academy section display:', academySection.style.display);
+      console.log('Genin section display:', geninSection.style.display);
+
+      // Show appropriate section
+      if (currentPlayer.rank === 'Academy Student') {
+        academySection.style.display = 'block';
+        geninSection.style.display = 'none';
+        console.log('Showing Academy section');
+      } else {
+        academySection.style.display = 'none';
+        geninSection.style.display = 'block';
+        console.log('Showing Genin section');
+      }
+    }
+
+    // Manual Create Exercises (Debug function)
+    async function manualCreateExercises() {
+      try {
+        console.log('Creating exercises for player:', currentPlayer.id);
+        await createExercises();
+        alert('✅ Exercises created! Reloading...');
+        await loadExercises();
+        await loadPendingApprovals();
+      } catch (error) {
+        console.error('Error creating exercises:', error);
+        alert('❌ Error: ' + error.message);
+      }
+    }
+    window.manualCreateExercises = manualCreateExercises;
+
+    // Auth State Change Listener
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        currentUser = session.user;
+        loadPlayerData().then(() => showGameScreen());
+      } else if (event === 'SIGNED_OUT') {
+        showLoginScreen();
+      }
+    });
+
+    // Start the app
+    init();
+  </script>
+</body>
+</html>

@@ -150,34 +150,38 @@
       margin-top: 20px;
     }
     .exercise-card {
-      background: rgba(255, 255, 255, 0.03);
-      border: 2px solid rgba(255, 107, 107, 0.3);
-      border-radius: 8px;
-      padding: 20px;
-      transition: all 0.3s ease;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      min-height: 200px;
-    }
-    .exercise-card:hover:not(.completed) {
-      border-color: #ff6b6b;
-      box-shadow: 0 5px 20px rgba(255, 107, 107, 0.3);
-    }
-    .exercise-card.completed {
-  border-color: #2ecc71;
-  background: rgba(46, 204, 113, 0.1);
-  animation: completeGlow 0.6s ease;
-  /* Ensure layout remains intact */
-  position: static; /* Prevents the card from shifting */
-  box-shadow: none; /* Remove box-shadow if needed */
+  display: flex;               /* Ensure the card has a flexible layout */
+  flex-direction: column;      /* Stack elements vertically inside the card */
+  justify-content: flex-start; /* Align items at the top */
+  padding: 20px;
+  margin: 10px 0;
+  transition: all 0.3s ease;   /* Smooth transition for card state change */
 }
-    }
-    @keyframes completeGlow {
-      0% { box-shadow: 0 0 0 rgba(46, 204, 113, 0); }
-      50% { box-shadow: 0 0 30px rgba(46, 204, 113, 0.6); }
-      100% { box-shadow: 0 0 10px rgba(46, 204, 113, 0.2); }
-    }
+
+.exercise-card .exercise-description {
+  margin-top: 10px;             /* Add spacing above the description */
+  padding: 10px;
+  position: relative;           /* Keep it in normal flow */
+  z-index: 1;                   /* Ensure the description stays above other items */
+}
+
+.exercise-card.completed {
+  border-color: #2ecc71;               /* Green border when completed */
+  background: rgba(46, 204, 113, 0.1); /* Light green background */
+  animation: completeGlow 0.6s ease;    /* Glow effect when completed */
+}
+
+@keyframes completeGlow {
+  0% {
+    border-color: rgba(46, 204, 113, 0.1);
+  }
+  50% {
+    border-color: #2ecc71;
+  }
+  100% {
+    border-color: rgba(46, 204, 113, 0.1);
+  }
+}
     .exercise-title {
       font-weight: 600;
       font-size: 16px;

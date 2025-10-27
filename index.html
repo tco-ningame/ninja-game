@@ -715,9 +715,8 @@
         if (newExercisesCompleted >= 5 && currentPlayer.rank === 'Academy Student') {
           await graduateToGenin();
         } else {
-          // DON'T reload exercises - just update the specific card in place
           updateUI();
-          updateExerciseCardInPlace(exerciseId);
+          await loadExercises();
           await loadPendingApprovals();
         }
 
@@ -725,20 +724,6 @@
         console.error('Error completing exercise:', error);
         alert('Error completing exercise: ' + error.message);
       }
-    }
-
-    // Update single exercise card without reloading all
-    function updateExerciseCardInPlace(exerciseId) {
-      const cards = exercisesGrid.querySelectorAll('.exercise-card');
-      cards.forEach(card => {
-        const button = card.querySelector('.complete-btn');
-        if (button && button.onclick && button.onclick.toString().includes(exerciseId)) {
-          // Update just this card
-          button.disabled = true;
-          button.className = 'complete-btn waiting-btn';
-          button.textContent = '⏳ Awaiting Approval';
-        }
-      });
     }
 
     // Load Pending Approvals (Circular System)

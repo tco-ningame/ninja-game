@@ -24,6 +24,78 @@
       min-height: 80vh;
       text-align: center;
     }
+    
+    /* Username Selection Screen */
+    .username-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      text-align: center;
+    }
+    .username-screen.active {
+      display: flex;
+    }
+    .username-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+    }
+    .username-input {
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      border: 2px solid rgba(255, 107, 107, 0.3);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .username-input:focus {
+      outline: none;
+      border-color: #ff6b6b;
+      box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+    }
+    .username-error {
+      color: #e74c3c;
+      font-size: 14px;
+      margin-top: 10px;
+      display: none;
+    }
+    .username-success {
+      color: #2ecc71;
+      font-size: 14px;
+      margin-top: 10px;
+      display: none;
+    }
+    .username-btn {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+      color: #fff;
+      padding: 15px 40px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: all 0.3s;
+    }
+    .username-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(255, 107, 107, 0.4);
+    }
+    .username-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
     .logo {
       font-size: 4rem;
       margin-bottom: 20px;
@@ -461,10 +533,26 @@
     const exercisesCompleted = document.getElementById('exercisesCompleted');
     const progressText = document.getElementById('progressText');
     const progressFill = document.getElementById('progressFill');
-    const exercisesGrid = document.getElementById('exercisesGrid');
     const approvalsGrid = document.getElementById('approvalsGrid');
     const academySection = document.getElementById('academySection');
     const geninSection = document.getElementById('geninSection');
+
+    // Exercise button references
+    const exerciseButtons = {
+      'Push-ups': document.getElementById('btn-pushups'),
+      'Running': document.getElementById('btn-running'),
+      'Shuriken Practice': document.getElementById('btn-shuriken'),
+      'Chakra Control': document.getElementById('btn-chakra'),
+      'Stealth Training': document.getElementById('btn-stealth')
+    };
+
+    const exerciseCards = {
+      'Push-ups': document.getElementById('card-pushups'),
+      'Running': document.getElementById('card-running'),
+      'Shuriken Practice': document.getElementById('card-shuriken'),
+      'Chakra Control': document.getElementById('card-chakra'),
+      'Stealth Training': document.getElementById('card-stealth')
+    };
 
     // Initialize
     async function init() {
@@ -668,26 +756,10 @@
       });
     }
 
-    // Complete Exercise - NO RELOAD, JUST UPDATE THE BUTTON
+    // Complete Exercise - ONLY UPDATE BUTTON
     async function completeExercise(exerciseId) {
       try {
-        // Find the button that was clicked
-        const allButtons = document.querySelectorAll('.complete-btn');
-        let clickedButton = null;
-        allButtons.forEach(btn => {
-          if (btn.onclick && btn.onclick.toString().includes(exerciseId)) {
-            clickedButton = btn;
-          }
-        });
-
-        // Disable button immediately
-        if (clickedButton) {
-          clickedButton.disabled = true;
-          clickedButton.className = 'complete-btn waiting-btn';
-          clickedButton.innerHTML = '⏳ Awaiting Approval';
-        }
-
-        // Mark exercise as completed in database
+        // Mark exercise as completed
         const { error: updateError } = await supabase
           .from('exercises')
           .update({ 
@@ -698,11 +770,26 @@
 
         if (updateError) throw updateError;
 
+        // Get the exercise name to update the right button
+        const { data: exercise } = await supabase
+          .from('exercises')
+          .select('exercise_name')
+          .eq('id', exerciseId)
+          .single();
+
+        // Update button immediately
+        const btn = exerciseButtons[exercise.exercise_name];
+        if (btn) {
+          btn.textContent = '⏳ Awaiting Approval';
+          btn.disabled = true;
+          btn.className = 'complete-btn waiting-btn';
+        }
+
         // Update player stats
         const newExercisesCompleted = currentPlayer.exercises_completed + 1;
         const newXP = currentPlayer.xp + 10;
 
-        const { error: playerError } = await supabase
+        await supabase
           .from('players')
           .update({ 
             exercises_completed: newExercisesCompleted,
@@ -711,23 +798,20 @@
           })
           .eq('id', currentPlayer.id);
 
-        if (playerError) throw playerError;
-
         currentPlayer.exercises_completed = newExercisesCompleted;
         currentPlayer.xp = newXP;
 
-        // Just update the stats UI, DON'T reload exercises
         updateUI();
         await loadPendingApprovals();
 
-        // Check if graduated to Genin
+        // Check if graduated
         if (newExercisesCompleted >= 5 && currentPlayer.rank === 'Academy Student') {
           await graduateToGenin();
         }
 
       } catch (error) {
         console.error('Error completing exercise:', error);
-        alert('Error completing exercise: ' + error.message);
+        alert('Error: ' + error.message);
       }
     }
 
@@ -977,6 +1061,6 @@
     // Start the app
     init();
   </script>
-  <div class="version">v2.0</div>
+  <div class="version">v2.1</div>
 </body>
 </html>

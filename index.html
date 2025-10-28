@@ -438,8 +438,13 @@
       <!-- Header -->
       <header>
         <div class="player-info">
-          <h2 id="playerName">Loading...</h2>
-          <span class="rank-badge" id="rankBadge">Academy Student</span>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <h2 id="playerName">Loading...</h2>
+            <button onclick="editUsername()" class="edit-name-btn">✏️ Edit</button>
+          </div>
+          <div style="margin-top: 8px;">
+            <span class="rank-badge" id="rankBadge">Academy Student</span>
+          </div>
           <div class="stats">
             <div class="stat-item">
               <span class="stat-value" id="levelValue">0</span>
@@ -655,13 +660,14 @@
       confirmUsernameBtn.disabled = true;
       
       // Validate format
-      if (username.length < 3) return;
-      if (username.length > 20) return;
-      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-        usernameError.textContent = '❌ Only letters, numbers, and underscores allowed';
-        usernameError.style.display = 'block';
+      if (username.length < 3) {
+        if (username.length > 0) {
+          usernameError.textContent = '❌ Username must be at least 3 characters';
+          usernameError.style.display = 'block';
+        }
         return;
       }
+      if (username.length > 50) return;
       
       // Check if username is taken (debounced)
       clearTimeout(usernameCheckTimeout);
@@ -681,9 +687,15 @@
         if (error) throw error;
         
         if (data && data.length > 0) {
-          usernameError.textContent = '❌ This name is already taken';
-          usernameError.style.display = 'block';
-          confirmUsernameBtn.disabled = true;
+          // Check if it's the current player's own username (for edit)
+          if (currentPlayer && data[0].id === currentPlayer.id) {
+            usernameSuccess.style.display = 'block';
+            confirmUsernameBtn.disabled = false;
+          } else {
+            usernameError.textContent = '❌ This name is already taken';
+            usernameError.style.display = 'block';
+            confirmUsernameBtn.disabled = true;
+          }
         } else {
           usernameSuccess.style.display = 'block';
           confirmUsernameBtn.disabled = false;
@@ -697,13 +709,8 @@
     confirmUsernameBtn.addEventListener('click', async () => {
       const username = usernameInput.value.trim();
       
-      if (username.length < 3 || username.length > 20) {
-        alert('Username must be 3-20 characters');
-        return;
-      }
-      
-      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-        alert('Only letters, numbers, and underscores allowed');
+      if (username.length < 3 || username.length > 50) {
+        alert('Username must be 3-50 characters');
         return;
       }
       
@@ -762,6 +769,52 @@
       }
     });
 
+    // Edit username function
+    async function editUsername() {
+      const newName = prompt('Enter your new ninja name (3-50 characters):', currentPlayer.name);
+      
+      if (!newName || newName.trim() === '') return;
+      
+      const trimmedName = newName.trim();
+      
+      if (trimmedName.length < 3 || trimmedName.length > 50) {
+        alert('Username must be 3-50 characters');
+        return;
+      }
+      
+      try {
+        // Check if name is taken
+        const { data: existing } = await supabase
+          .from('players')
+          .select('id')
+          .ilike('name', trimmedName)
+          .neq('id', currentPlayer.id)
+          .limit(1);
+        
+        if (existing && existing.length > 0) {
+          alert('❌ This name is already taken!');
+          return;
+        }
+        
+        // Update name
+        const { error } = await supabase
+          .from('players')
+          .update({ name: trimmedName })
+          .eq('id', currentPlayer.id);
+        
+        if (error) throw error;
+        
+        currentPlayer.name = trimmedName;
+        playerName.textContent = trimmedName;
+        alert('✅ Name updated successfully!');
+        
+      } catch (error) {
+        console.error('Error updating name:', error);
+        alert('❌ Error updating name: ' + error.message);
+      }
+    }
+    window.editUsername = editUsername;
+
     // Load Player Data
     async function loadPlayerData() {
       try {
@@ -784,15 +837,15 @@
           // New player - show username selection
           console.log('New user - showing username selection');
           showUsernameScreen();
-          // Pre-fill with Google name as suggestion
-          usernameInput.value = (currentUser.user_metadata.full_name || currentUser.email.split('@')[0]).replace(/\s+/g, '_').substring(0, 20);
+          // Pre-fill with Google name as suggestion (keep original with spaces)
+          usernameInput.value = (currentUser.user_metadata.full_name || currentUser.email.split('@')[0]).substring(0, 50);
         }
 
       } catch (error) {
         if (error.code === 'PGRST116') {
           // No player found - new user
           showUsernameScreen();
-          usernameInput.value = (currentUser.user_metadata.full_name || currentUser.email.split('@')[0]).replace(/\s+/g, '_').substring(0, 20);
+          usernameInput.value = (currentUser.user_metadata.full_name || currentUser.email.split('@')[0]).substring(0, 50);
         } else {
           console.error('Error loading player:', error);
           alert('Error loading player data: ' + error.message);

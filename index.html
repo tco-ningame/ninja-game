@@ -404,6 +404,34 @@
       </button>
     </div>
 
+    <!-- Username Selection Screen -->
+    <div class="username-screen" id="usernameScreen">
+      <div class="username-card">
+        <div class="logo" style="font-size: 3rem;">🥷</div>
+        <h2 style="color: #ff6b6b; margin: 20px 0;">Choose Your Ninja Name</h2>
+        <p style="color: #aaa; margin-bottom: 20px;">This will be your unique identity in the ninja world</p>
+        
+        <input 
+          type="text" 
+          id="usernameInput" 
+          class="username-input" 
+          placeholder="Enter your ninja name..."
+          maxlength="50"
+        />
+        
+        <div class="username-error" id="usernameError">❌ This name is already taken</div>
+        <div class="username-success" id="usernameSuccess">✅ This name is available!</div>
+        
+        <div style="font-size: 12px; color: #888; margin-top: 10px;">
+          3-50 characters • Spaces allowed
+        </div>
+        
+        <button class="username-btn" id="confirmUsernameBtn" disabled>
+          Continue to Academy
+        </button>
+      </div>
+    </div>
+
     <!-- Game Screen -->
     <div class="game-screen" id="gameScreen">
       
@@ -523,8 +551,13 @@
 
     // DOM Elements
     const loginScreen = document.getElementById('loginScreen');
+    const usernameScreen = document.getElementById('usernameScreen');
     const gameScreen = document.getElementById('gameScreen');
     const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const usernameInput = document.getElementById('usernameInput');
+    const confirmUsernameBtn = document.getElementById('confirmUsernameBtn');
+    const usernameError = document.getElementById('usernameError');
+    const usernameSuccess = document.getElementById('usernameSuccess');
     const logoutBtn = document.getElementById('logoutBtn');
     const playerName = document.getElementById('playerName');
     const rankBadge = document.getElementById('rankBadge');
@@ -571,11 +604,19 @@
     // Show/Hide Screens
     function showLoginScreen() {
       loginScreen.style.display = 'flex';
+      usernameScreen.classList.remove('active');
+      gameScreen.classList.remove('active');
+    }
+
+    function showUsernameScreen() {
+      loginScreen.style.display = 'none';
+      usernameScreen.classList.add('active');
       gameScreen.classList.remove('active');
     }
 
     function showGameScreen() {
       loginScreen.style.display = 'none';
+      usernameScreen.classList.remove('active');
       gameScreen.classList.add('active');
     }
 
@@ -603,6 +644,124 @@
       showLoginScreen();
     });
 
+    // Username validation and checking
+    let usernameCheckTimeout;
+    usernameInput.addEventListener('input', () => {
+      const username = usernameInput.value.trim();
+      
+      // Reset states
+      usernameError.style.display = 'none';
+      usernameSuccess.style.display = 'none';
+      confirmUsernameBtn.disabled = true;
+      
+      // Validate format
+      if (username.length < 3) return;
+      if (username.length > 20) return;
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        usernameError.textContent = '❌ Only letters, numbers, and underscores allowed';
+        usernameError.style.display = 'block';
+        return;
+      }
+      
+      // Check if username is taken (debounced)
+      clearTimeout(usernameCheckTimeout);
+      usernameCheckTimeout = setTimeout(async () => {
+        await checkUsernameAvailability(username);
+      }, 500);
+    });
+
+    async function checkUsernameAvailability(username) {
+      try {
+        const { data, error } = await supabase
+          .from('players')
+          .select('id')
+          .ilike('name', username)
+          .limit(1);
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          usernameError.textContent = '❌ This name is already taken';
+          usernameError.style.display = 'block';
+          confirmUsernameBtn.disabled = true;
+        } else {
+          usernameSuccess.style.display = 'block';
+          confirmUsernameBtn.disabled = false;
+        }
+      } catch (error) {
+        console.error('Error checking username:', error);
+      }
+    }
+
+    // Confirm username and create player
+    confirmUsernameBtn.addEventListener('click', async () => {
+      const username = usernameInput.value.trim();
+      
+      if (username.length < 3 || username.length > 20) {
+        alert('Username must be 3-20 characters');
+        return;
+      }
+      
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        alert('Only letters, numbers, and underscores allowed');
+        return;
+      }
+      
+      confirmUsernameBtn.disabled = true;
+      confirmUsernameBtn.textContent = 'Creating...';
+      
+      try {
+        // Double-check availability
+        const { data: existing } = await supabase
+          .from('players')
+          .select('id')
+          .ilike('name', username)
+          .limit(1);
+        
+        if (existing && existing.length > 0) {
+          alert('Username was just taken! Please choose another.');
+          confirmUsernameBtn.disabled = false;
+          confirmUsernameBtn.textContent = 'Continue to Academy';
+          return;
+        }
+        
+        // Create new player
+        const { data: newPlayer, error: createError } = await supabase
+          .from('players')
+          .insert([{
+            user_id: currentUser.id,
+            name: username,
+            rank: 'Academy Student',
+            level: 0,
+            xp: 0,
+            exam_eligible: false,
+            exercises_completed: 0
+          }])
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        
+        currentPlayer = newPlayer;
+        console.log('Created new player:', currentPlayer);
+
+        // Create exercises
+        await createExercises();
+        
+        // Load game
+        updateUI();
+        await loadExercises();
+        await loadPendingApprovals();
+        showGameScreen();
+        
+      } catch (error) {
+        console.error('Error creating player:', error);
+        alert('Error creating player: ' + error.message);
+        confirmUsernameBtn.disabled = false;
+        confirmUsernameBtn.textContent = 'Continue to Academy';
+      }
+    });
+
     // Load Player Data
     async function loadPlayerData() {
       try {
@@ -614,39 +773,30 @@
           .single();
 
         if (existingPlayer) {
+          // Existing player - go straight to game
           currentPlayer = existingPlayer;
           console.log('Loaded existing player:', currentPlayer);
+          updateUI();
+          await loadExercises();
+          await loadPendingApprovals();
+          showGameScreen();
         } else {
-          // Create new player
-          const { data: newPlayer, error: createError } = await supabase
-            .from('players')
-            .insert([{
-              user_id: currentUser.id,
-              name: currentUser.user_metadata.full_name || currentUser.email.split('@')[0],
-              rank: 'Academy Student',
-              level: 0,
-              xp: 0,
-              exam_eligible: false,
-              exercises_completed: 0
-            }])
-            .select()
-            .single();
-
-          if (createError) throw createError;
-          currentPlayer = newPlayer;
-          console.log('Created new player:', currentPlayer);
-
-          // Create exercises for new player
-          await createExercises();
+          // New player - show username selection
+          console.log('New user - showing username selection');
+          showUsernameScreen();
+          // Pre-fill with Google name as suggestion
+          usernameInput.value = (currentUser.user_metadata.full_name || currentUser.email.split('@')[0]).replace(/\s+/g, '_').substring(0, 20);
         }
 
-        updateUI();
-        await loadExercises();
-        await loadPendingApprovals();
-
       } catch (error) {
-        console.error('Error loading player:', error);
-        alert('Error loading player data: ' + error.message);
+        if (error.code === 'PGRST116') {
+          // No player found - new user
+          showUsernameScreen();
+          usernameInput.value = (currentUser.user_metadata.full_name || currentUser.email.split('@')[0]).replace(/\s+/g, '_').substring(0, 20);
+        } else {
+          console.error('Error loading player:', error);
+          alert('Error loading player data: ' + error.message);
+        }
       }
     }
 
@@ -1061,6 +1211,5 @@
     // Start the app
     init();
   </script>
-  <div class="version">v2.1</div>
 </body>
 </html>
